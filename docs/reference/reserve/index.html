@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>원자재 비축·조합 · 3번 연습</title>
+  <link rel="stylesheet" href="material.css">
+  <style>
+    body { margin: 0; background: #efe7d8; }
+    .mat-demo p { max-width: 640px; }
+  </style>
+</head>
+<body>
+  <div class="mat-demo">
+    <p><strong>3번 단독 연습</strong><br>계획을 확정한 뒤 다음 날로 넘기면 닷새 점수까지 확인할 수 있어요. 본게임에 넣을 때는 날짜 이동을 메인 화면이 맡아요.</p>
+    <div class="mat-demo-actions">
+      <button type="button" class="mat-btn" id="restart">새 연습</button>
+      <button type="button" class="mat-btn primary" id="next">다음 날</button>
+    </div>
+  </div>
+  <p id="demo-status" class="mat-demo" style="padding-top: 0;"></p>
+  <div id="app"></div>
+  <script src="vendor/golden-time-system.js"></script>
+  <script src="material-core.js"></script>
+  <script src="material.js"></script>
+  <script>
+    const system = GoldenTimeSystem;
+    const systemKey = "goldentime-material-demo-system";
+    const rankKey = "goldentime-material-demo-rank";
+    const materialKey = "goldentime-material-demo-v1";
+    const reports = [];
+    const news = {
+      reportDay(day, payload) {
+        reports.push({ day, payload });
+        paintStatus();
+      },
+      getMarket(day) {
+        const reserve = {};
+        try {
+          const saved = JSON.parse(localStorage.getItem(materialKey) || "null");
+          Object.entries((saved && saved.settled) || {}).forEach(([key, row]) => {
+            if (row && row.required > 0) reserve[key] = Math.max(0, Math.min(1, row.available / row.required));
+          });
+        } catch (error) {}
+        return GoldenTimeMaterialCore.buildMarket(day, reserve);
+      }
+    };
+
+    let session = system.createSession(localStorage, {
+      saveKey: systemKey,
+      rankingKey: rankKey,
+      stateOptions: { days: 5, startingBudget: 3000 }
+    });
+    if (!session.getState().finished) session.start();
+    let material = mount();
+
+    function mount() {
+      return GoldenTimeMaterial.create({
+        mount: document.querySelector("#app"),
+        session,
+        system,
+        news,
+        storage: localStorage,
+        storageKey: materialKey,
+        demo: true,
+        onSettled: paintStatus
+      });
+    }
+
+    function paintStatus() {
+      const state = session.getState();
+      const summary = system.summarize(state);
+      const last = reports[reports.length - 1];
+      const sent = last ? "뉴스 " + last.day + "일차 확보 " + last.payload.reserve.availableQuantity + "/" + last.payload.reserve.requiredQuantity : "아직 뉴스에 넘긴 결과가 없어요";
+      const score = summary.scoredCategories.includes("economicDefense") ? summary.scores.economicDefense + "점" : "미평가";
+      document.querySelector("#demo-status").textContent = state.finished
+        ? "5일 종료 · 종합 " + summary.finalScore + "점 " + summary.grade + "등급 · 경제 방어력 " + score + " · 예산 " + systemRound(state.budget) + "억 · " + sent
+        : state.day + "일차 · 경제 방어력 " + score + " · 예산 " + systemRound(state.budget) + "억 · " + sent;
+      document.querySelector("#next").textContent = state.finished ? "연습 종료" : "다음 날";
+    }
+
+    function systemRound(value) {
+      return (Math.round(value * 100) / 100).toLocaleString("ko-KR");
+    }
+
+    document.querySelector("#next").onclick = () => {
+      const state = session.getState();
+      if (state.finished) return;
+      if (!material.isClosed()) {
+        document.querySelector("#demo-status").textContent = "오늘 계획을 확정한 다음에 다음 날로 넘어갈 수 있어요.";
+        return;
+      }
+      session.closeDay();
+      material.refresh();
+      paintStatus();
+    };
+
+    document.querySelector("#restart").onclick = () => {
+      if (!confirm("연습을 처음부터 다시 할까요? 이 연습의 저장만 지워요.")) return;
+      session.pause();
+      [systemKey, materialKey].forEach((key) => localStorage.removeItem(key));
+      reports.length = 0;
+      session = system.createSession(localStorage, {
+        saveKey: systemKey,
+        rankingKey: rankKey,
+        stateOptions: { days: 5, startingBudget: 3000 }
+      });
+      session.start();
+      material.destroy();
+      material = mount();
+      paintStatus();
+    };
+
+    paintStatus();
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+const fs=require('fs'),path=require('path'),assert=require('node:assert/strict');const root=path.join(__dirname,'..');const original=fs.readFileSync(path.join(root,'docs/reference/golden-time-news.original.js'),'utf8');const actual=fs.readFileSync(path.join(root,'modules/golden-time-news.js'),'utf8');
+const approved=original.replace('const total = ok + wrong + fake;','const total = ok + wrong + fake + num(c.unresolved, 0);').replaceAll('viewBox="0 0 60 22"','viewBox="0 0 72 32" preserveAspectRatio="xMidYMid meet"').replaceAll('M2 11h56','M6 16h60').replaceAll('[2 + (i * 56) / (history.length - 1), 20 - ((v - lo) / (hi - lo)) * 18]','[6 + (i * 60) / (history.length - 1), 26 - ((v - lo) / (hi - lo)) * 20]');
+// Guard original synthesis separately from browser connection management.
+const between=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
+assert.equal(between(actual,'    function tone(','    return {\n      play(name)'),between(original,'    function tone(','    return {\n      play(name)'),'Original tone, rumble and every effect parameter are unchanged');
+const soundBlock=s=>between(s,'  const Sound =','  /* ═════════════ 5.');
+let normalized=actual.replace(soundBlock(actual),soundBlock(original)).replace(/\n      \/\* sound-recovery-ui \*\/[\s\S]*?\/\* end-sound-recovery-ui \*\/\n/,'').replace(' if (!Sound.isMuted()) Sound.resume();','').replace('      resumeSound() { Sound.resume(); },\n','');
+normalized=normalized.replace('      news.dari[2] = \"해원시의 복구 상황을 함께 확인해 봐요.\";\n','').replace('    if (st.nights[DAYS]) { st.nights[DAYS].dari[2] = \"해원시의 복구 상황을 함께 확인해 봐요.\"; save(); }\n','');
+assert.equal(normalized,approved,'Only documented ending copy, scoring/graph and audio connection/UI differ');
+const css=fs.readFileSync(path.join(root,'modules/golden-time-news.css'),'utf8'),originalCss=fs.readFileSync(path.join(root,'docs/reference/golden-time-news.original.css'),'utf8');assert(css.startsWith(originalCss));assert.equal(fs.readdirSync(path.join(root,'assets/audio')).filter(x=>x.endsWith('.wav')).length,7);console.log('PASS: original effects, news, quake and scoring preserved; only documented connection/UI, scoring and graph edits.');
+
+assert.equal(actual,fs.readFileSync(path.join(root,'docs/reference/news-latest/golden-time-news.js'),'utf8'),'Module 5 matches the latest team ZIP byte-for-byte');
+assert.equal(css,fs.readFileSync(path.join(root,'docs/reference/news-latest/golden-time-news.css'),'utf8'));
