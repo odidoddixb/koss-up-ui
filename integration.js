@@ -21,6 +21,7 @@
  };
  let newsModule=window.GoldenTimeNews.create({session,system:SYS,mount:newsStage,storage:localStorage,storageKey:keys.news,assets:newsAssets});
  window.GoldenTimeNewsExpressions.attach({root:newsStage,news:newsModule,assets:newsAssets.dari});
+ window.GoldenTimeNewsDailyGrade.attach({root:newsStage,system:SYS,getState:()=>session.getState()});
  // One-time repair of stale mute state; subsequent user mute choices remain saved.
  if(!read(keys.soundMigration,false)){newsModule.setMuted(false);write(keys.soundMigration,true)}
  let contracts=read(keys.contracts,{}),busy=false,materialModule=null,innovationModule=null;
