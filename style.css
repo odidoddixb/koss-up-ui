@@ -110,7 +110,7 @@ body[data-avatar="female"]{--scene-art:url('assets/office-female.png')}body[data
 #work-module .mat{--ink:#394867;--muted:#76839f;--paper:#eef2fc;--card:#fbf8f2;--line:#cbd5ea;--brass:#607fb8;--brass-deep:#394867;--good:#4d8155;--bad:#bd5052;--warn:#7d6bb3;--up:#d15c5a;--down:#4d8155;--shadow:0 4px 0 #c8d2e8,0 10px 22px #39486712;background:linear-gradient(135deg,#e8effc,#eeebf8);border:1px solid #cbd5ea}
 #work-module .mat-top,#work-module .mat-mission,#work-module .mat-sheet,#work-module .mat-preview,#work-module .mat-result,#work-module .mat-market article,#work-module .mat-recipe{background:linear-gradient(145deg,#fff,#fbf8f2);border-color:#cbd5ea}
 #work-module .mat-stats div,#work-module .mat-preview-grid div,#work-module .mat-result-grid div{background:#eaf0fc;border:1px solid #d5def1}
-#work-module .mat-stamp{border-color:#607fb8;color:#526fa8;background:#edf2ff}
+#work-module .mat-stamp{display:none;border-color:#607fb8;color:#526fa8;background:#edf2ff}
 #work-module .mat th{background:#eaf0fc;color:#394867}
 #work-module .mat-step{border-color:#c6d2e9;background:#fff}
 #work-module .mat-step input:focus{outline-color:#8fbdf7;background:#f0f5ff}
@@ -135,3 +135,12 @@ body[data-avatar="female"]{--scene-art:url('assets/office-female.png')}body[data
 .gtn-overlay .gtn-cause-voice .gtn-face,.gtn-overlay .gtn-satis .gtn-face{width:100%;align-self:center}
 #work-module .mat-meter,#work-module .mat-calc{background:#eaf0fc;border:1px solid #cbd5ea;color:#394867}
 @media(max-width:800px){.gtn-overlay .gtn-cause-voice{grid-template-columns:4.8em minmax(0,1fr)}.gtn-overlay .gtn-satis{grid-template-columns:4.5em minmax(0,1fr) auto}}
+
+@media(min-width:861px){#work-module .mat-top{grid-template-columns:minmax(0,1.4fr) minmax(220px,.8fr)}}
+
+/* Evening headline: today's evaluated work, separate from disaster metrics. */
+#news-stage .gtn-work-grade{border-left-color:#9281ce;background:linear-gradient(135deg,#fff,#eeebf8)}
+#news-stage .gtn-work-grade .gtn-work-grade-value{color:#526fa8;font-size:1.9em;font-weight:700;display:flex;gap:.5em;align-items:baseline;flex-wrap:wrap}
+#news-stage .gtn-work-grade .gtn-work-score{font-size:.62em;color:#394867}
+#news-stage .gtn-work-grade small{font-size:.7em;line-height:1.4;color:#657799;margin-top:.3em}
+@media(max-width:900px){#news-stage .gtn-stats{flex-wrap:wrap}#news-stage .gtn-work-grade .gtn-work-grade-value{font-size:1.5em}}
