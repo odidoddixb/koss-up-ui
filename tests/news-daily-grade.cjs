@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict'),System=require('../modules/golden-time-system.js'),Grade=require('../modules/golden-time-news-daily-grade.js');
+let state=System.createState();for(let i=0;i<3;i++)state=System.applyOutcome(state,{integrityDecision:'correct'});state=System.closeDay(state);
+state=System.applyOutcome(state,{integrityDecision:'ordinaryWrong'});state=System.closeDay(state);
+const saved=JSON.stringify(state),today=Grade.summarizeDay(System,state,2);
+assert.equal(today.finalScore,0);assert.equal(today.grade,'F');assert.notEqual(state.dailyResults[1].finalScore,today.finalScore,'Cumulative and daily work are distinct');
+assert.equal(Grade.summarizeDay(System,state,1).finalScore,100,'Archive reuses selected day only');assert.equal(Grade.summarizeDay(System,state,3),null,'Unclosed day has no grade');
+assert.equal(JSON.stringify(state),saved,'Reading grades leaves state unchanged');
+state=System.closeDay(state);assert.equal(Grade.summarizeDay(System,state,3),null,'No assessed work is not assigned a grade');
+const before=JSON.stringify(state);Grade.summarizeDay(System,state,1);Grade.summarizeDay(System,state,2);assert.equal(JSON.stringify(state),before,'No scores, budget, history or saved results are changed');
+let mixed=System.createState();mixed=System.applyOutcome(mixed,{integrityDecision:'falseApproval',innovationDecision:'failure'});mixed=System.closeDay(mixed);
+mixed=System.applyOutcome(mixed,{integrityDecision:'correct',innovationDecision:'success',economicDecision:{requiredQuantity:10,availableQuantity:10,referenceUnitCost:2,actualTotalCost:0,marketResponse:'success'},budgetAssessment:{allocatedBudget:100,actualCost:50,fulfillment:1}});mixed=System.closeDay(mixed);
+assert.equal(Grade.summarizeDay(System,mixed,2).finalScore,100,'All four assessment categories reuse system formulas for that day only');
+console.log('PASS daily news grade: only that day’s evaluated work, prior-day archive, unclosed/unassessed days, and unchanged game state.');
