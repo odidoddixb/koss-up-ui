@@ -27,4 +27,13 @@ news.reportDay(4,{innovation:{decision:'success'}});assert.doesNotMatch(news.get
 // 6) incomplete를 보내지 않으면 기존 동작(점수·전날 값 대체)과 같다.
 const base=N.freshState();base.inputs[1]=N.normalizeInputs({contract:{correct:3},reserve:{fulfillment:1},innovation:{decision:'success'}});
 assert.equal(N.buildNightNews(base,1,null).progress,10);
+// 7) 드론 이야기는 1일차 드론 기업의 결정에서만 나온다. 2~5일차는 그날 기업의 제품 기사가 나온다.
+{const nw=N.create({session,storage:null}),b={contract:{correct:3},reserve:{requiredQuantity:10,availableQuantity:10}};
+ nw.reportDay(1,{...b,innovation:{decision:'failure'}});nw.reportDay(2,{...b,innovation:{decision:'success'}});nw.reportDay(3,{...b,innovation:{decision:'success'}});nw.reportDay(5,{...b,incomplete:['innovation']});
+ assert.equal(nw.getNightNews(1).droneLevel,0);assert.equal(nw.getNightNews(2).droneLevel,0,'이후 날의 성공이 드론 효과를 만들면 안 된다');
+ assert.match(nw.getNightNews(2).causes[2].title,/통신장비/);assert.doesNotMatch(nw.getNightNews(2).causes[2].title,/드론/);
+ assert.match(nw.getNightNews(3).causes[2].title,/도입 보류/); // 검증 안 된 의료기기는 거절이 success
+ assert.match(nw.getNightNews(5).causes[2].title,/지원 결정 못 내려/);
+ const dr=N.create({session,storage:null});dr.reportDay(1,{...b,innovation:{decision:'success'}});assert.equal(dr.getNightNews(1).droneLevel,1);}
+
 console.log('PASS: incomplete tasks, unresolved contracts and neutral innovation copy.');
