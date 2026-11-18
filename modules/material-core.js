@@ -129,7 +129,7 @@
       objective: "deploy",
       focus: "fuel",
       requiredQuantity: 8,
-      allocatedBudget: 20,
+      allocatedBudget: 22,
       equivalents: { fuel: 1 },
       releaseOrder: ["fuel"],
       recipes: [],
@@ -140,19 +140,21 @@
       shortageProbability: 0.75,
       shortageImpactPerUnit: 12,
       forecastUnitPrice: 3.2,
+      forwardStock: { lumber: 2 },
+      forwardStockNote: "4일차 목재 가격 상승을 대비해, 현재 재고를 뺀 부족분 최대 2묶음까지 선매입할 수 있어요.",
       freshObsolescenceRate: 0.25,
       offFocusObsolescenceRate: 0.7,
       carryObsolescenceRate: 0,
       holdingRate: 0.02,
       suggestSell: false,
-      briefing: "여진으로 수송이 급해요. 경유는 크게 올랐지만 수입 물량은 5일차에 들어와요. 철강·시멘트는 오늘이 고점일 수 있어요.",
+      briefing: "여진으로 수송이 급해요. 경유는 크게 올랐지만 수입 물량은 5일차에 들어와요. 철강·시멘트는 오늘이 고점일 수 있지만, 목재는 4일차 가격 상승이 예상돼요.",
       clues: [
         "오늘 필요량은 경유예요. 철강·시멘트·목재를 사도 경유 확보량에는 들어가지 않아요.",
         "가진 경유를 먼저 방출하고, 부족한 묶음만 사는 편이 위험 비용이 낮아요.",
-        "고점에서 복구 자재를 쌓아 두면 이후 가격이 내릴 때 부담이 돼요."
+        "철강·시멘트는 고점 매입을 피하고, 4일차 목재는 필요량 부족분 최대 2묶음까지 미리 살 수 있어요."
       ],
-      failHint: "경유 부족을 그대로 뒀거나, 고점인 다른 자재까지 같이 샀어요.",
-      calculatorNote: "오늘은 경유만 필요량에 들어가요. 다른 자재 매입은 계산기 밖에 있어요."
+      failHint: "경유 부족을 그대로 뒀거나, 목재 선매입 2묶음을 넘기거나, 고점인 철강·시멘트를 불필요하게 샀어요.",
+      calculatorNote: "오늘 확보량은 경유만 계산해요. 단, 목재 부족분 최대 2묶음은 4일차 준비로 인정돼요."
     },
     4: {
       day: 4,
@@ -505,7 +507,15 @@
       if (equivalents[id]) return;
       nonEqBuy = mny(nonEqBuy + draft.buy[id] * prices[id]);
     });
-    const offFocusSpend = mny(Math.max(0, nonEqBuy - productiveNonEqFreshBasis));
+    const forwardStock = scenario.forwardStock || {};
+    const initialHand = onHand(warehouse.lots);
+    const forwardStockCredit = IDS.reduce((total, id) => {
+      const futureNeed = SCENARIOS[day + 1]?.requiredQuantity || 0;
+      const gap = Math.max(0, futureNeed - (initialHand[id] || 0));
+      const eligible = Math.min(draft.buy[id], forwardStock[id] || 0, gap);
+      return mny(total + eligible * prices[id]);
+    }, 0);
+    const offFocusSpend = mny(Math.max(0, nonEqBuy - productiveNonEqFreshBasis - forwardStockCredit));
     const warehouseValue = endValueOf(lots, prices);
     const obsolescence = mny(
       freshSurplusValue * scenario.freshObsolescenceRate
@@ -542,6 +552,7 @@
       acquisitionCost,
       holdingCost,
       obsolescenceCost: obsolescence,
+      forwardStockCost: forwardStockCredit,
       warehouseValue,
       prices
     };
@@ -549,7 +560,7 @@
 
   function expectedCost(system, sim, scenario) {
     return mny(system.calculateExpectedPlanCost({
-      acquisitionCost: sim.acquisitionCost,
+      acquisitionCost: Math.max(0, sim.acquisitionCost - (sim.forwardStockCost || 0)),
       holdingCost: sim.holdingCost,
       shortageQuantity: sim.shortage,
       shortageProbability: sim.shortage > 0 ? scenario.shortageProbability : 0,
@@ -681,6 +692,17 @@
       ["보유", holdDraft(warehouse, scenario)]
     ];
     if (scenario.suggestSell) named.push(["매각", sellDraft(warehouse, scenario)]);
+    if (scenario.forwardStock) {
+      const prepared = coverDraft(warehouse, scenario);
+      const hand = onHand(warehouse.lots);
+      IDS.forEach((id) => {
+        const futureNeed = SCENARIOS[scenario.day + 1]?.requiredQuantity || 0;
+        const alreadyUseful = Math.min(hand[id] || 0, futureNeed);
+        prepared.buy[id] = Math.max(prepared.buy[id] || 0,
+          Math.min(scenario.forwardStock[id] || 0, Math.max(0, futureNeed - alreadyUseful)));
+      });
+      named.push(["preparation", prepared]);
+    }
     const plans = named.map(([name, draft]) => {
       const planSim = simulate(warehouse, scenario, draft, market, budget, protectedBudget);
       return {

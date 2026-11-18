@@ -319,7 +319,7 @@
     const chosen = finite(chosenExpectedCost, "chosenExpectedCost");
     const best = finite(bestFeasibleExpectedCost, "bestFeasibleExpectedCost");
     if (chosen < 0 || best < 0) throw new RangeError("Expected plan costs must not be negative");
-    const limits = { success: 0.05, partial: 0.25, ...(tolerances || {}) };
+    const limits = { success: 0.10, partial: 0.35, ...(tolerances || {}) };
     if (chosen <= best * (1 + limits.success)) return "success";
     if (chosen <= best * (1 + limits.partial)) return "partial";
     return "failure";

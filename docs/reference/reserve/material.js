@@ -357,7 +357,8 @@
         + '<dl class="mat-stats"><div><dt>가용 예산</dt><dd>' + money(core, state.budget) + '억</dd></div><div><dt>경제 방어력</dt><dd>' + scoreText + '</dd></div></dl></header>'
         + '<div class="mat-market">' + cards + '</div>'
         + '<section class="mat-mission"><h2>' + esc(scenario.title) + '</h2><p class="mat-brief">' + esc(scenario.briefing) + '</p><ul class="mat-clues">'
-        + scenario.clues.map((clue) => "<li>" + esc(clue) + "</li>").join("") + "</ul>"
+        + scenario.clues.map((clue) => "<li>" + esc(clue) + "</li>").join("")
+        + (scenario.forwardStockNote ? "<li>" + esc(scenario.forwardStockNote) + "</li>" : "") + "</ul>"
         + '<div class="mat-meters"><div class="mat-meter"><strong>오늘 임무</strong><p class="mat-big">' + scenario.requiredQuantity + '묶음</p><p>' + esc(meter) + '</p></div>'
         + '<div class="mat-calc"><strong>' + esc(core.MATERIAL[scenario.focus].label) + " 참고 매입 " + evaluated.replenishment.plannedPurchaseQuantity + '묶음</strong><p>목표 재고 ' + evaluated.replenishment.targetStock + " · 재고 위치 " + evaluated.replenishment.stockPosition + " · 예산으로 살 수 있는 양 " + evaluated.replenishment.affordableQuantity + "묶음. " + esc(scenario.calculatorNote) + "</p></div></div></section>"
         + (closed && entry ? resultHtml(core, scenario, entry, save.settled[day]) : "")
@@ -434,9 +435,9 @@
     const supply = components.supplyFulfillment == null ? "" : Math.round(components.supplyFulfillment * 100) + "%";
     const efficiency = components.budgetEfficiency == null ? "" : Math.round(components.budgetEfficiency * 100) + "%";
     const hint = response === "success"
-      ? "위험 조정 비용이 당시 실행 가능한 최선과 5% 안쪽이에요."
+      ? "위험 조정 비용이 당시 실행 가능한 최선보다 10% 이내예요."
       : response === "partial"
-        ? "최선보다는 비용이 높지만 25% 안쪽이에요."
+        ? "최선보다 비용이 높지만 35% 이내예요."
         : scenario.failHint;
     return '<section class="mat-result ' + tone + '"><h2>오늘 결과 · ' + esc(RESPONSE[response] || "반영됨") + '</h2>'
       + '<div class="mat-result-grid"><div><span>확보</span><b>' + (settled ? settled.available : entry.economicDecision.availableQuantity) + " / " + scenario.requiredQuantity + '</b></div>'

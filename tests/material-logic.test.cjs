@@ -57,7 +57,7 @@ const mixed = play(warehouse, 1, { buy: { steel: 5, fuel: 4 } }, reserve, budget
 must(mixed.evaluated.marketResponse === "failure", mixed.evaluated, "1일차 경유 동반 매입은 실패예요");
 
 const slight = play(warehouse, 1, { buy: { steel: 6 } }, reserve, budget);
-must(slight.evaluated.marketResponse === "partial", slight.evaluated, "1일차 1묶음 초과는 부분 성공이에요");
+must(slight.evaluated.marketResponse === "partial", slight.evaluated, "1일차 1묶음 초과는 부분 성공 허용 범위예요");
 
 const blocked = play(warehouse, 1, { buy: { steel: 40, cement: 40, fuel: 40, lumber: 40 } }, reserve, budget);
 must(!blocked.evaluated.ok, blocked.evaluated, "보호 예산을 넘는 매입은 거절해요");
