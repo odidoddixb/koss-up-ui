@@ -331,10 +331,10 @@
 
       const preview = evaluated.ok ? previewHtml(core, scenario, evaluated, protectedBudget) : '<ul class="mat-errors">' + evaluated.errors.map((text) => "<li>" + esc(text) + "</li>").join("") + "</ul>";
       const releaseWarn = scenario.objective === "stock" && core.IDS.some((id) => ((liveDraft.release && liveDraft.release[id]) || 0) > 0)
-        ? '<p class="mat-warn">오늘은 비축일이라 방출한 수량만큼 확보량에서 빠져요.</p>' : "";
+        ? '<p class="mat-warn">오늘은 비축일이라 방출한 수량만큼 창고 비축량에서 빠져요.</p>' : "";
       const meter = scenario.objective === "stock"
         ? "지금 창고의 환산 재고는 " + stockEq + "묶음이에요. 오늘 필요량은 " + scenario.requiredQuantity + "묶음이에요."
-        : "창고를 환산하면 " + stockEq + "묶음이지만, 방출하거나 환산되는 조합을 해야 오늘 확보량으로 계산돼요. 필요량은 " + scenario.requiredQuantity + "묶음이에요.";
+        : "창고를 환산하면 " + stockEq + "묶음이지만, 방출하거나 환산되는 조합을 해야 오늘 현장 투입량으로 계산돼요. 필요량은 " + scenario.requiredQuantity + "묶음이에요.";
 
       const actions = closed
         ? (options.onClose ? '<button type="button" class="mat-btn" data-act="close">대시보드로</button>' : "")
@@ -424,8 +424,9 @@
 
   function previewHtml(core, scenario, evaluated, protectedBudget) {
     const sim = evaluated.sim;
+    const quantityLabel = scenario.objective === "stock" ? "창고 비축량" : "현장 투입량";
     const bits = core.IDS.filter((id) => sim.onHand[id] > 0).map((id) => core.MATERIAL[id].label + " " + sim.onHand[id]).join(" · ") || "비어 있음";
-    return '<div class="mat-preview-grid"><div><span>확보량</span><b>' + sim.available + " / " + sim.required + '</b></div><div><span>예산 변화</span><b>' + signed(core, sim.budgetDelta) + '억</b></div><div><span>확정 후 예산</span><b>' + money(core, sim.endBudget) + '억</b></div><div><span>보호 예산</span><b>' + money(core, protectedBudget) + '억</b></div></div><p class="mat-stockline">확정 후 창고: ' + esc(bits) + "</p>";
+    return '<div class="mat-preview-grid"><div><span>' + quantityLabel + '</span><b>' + sim.available + " / " + sim.required + '</b></div><div><span>예산 변화</span><b>' + signed(core, sim.budgetDelta) + '억</b></div><div><span>확정 후 예산</span><b>' + money(core, sim.endBudget) + '억</b></div><div><span>보호 예산</span><b>' + money(core, protectedBudget) + '억</b></div></div><p class="mat-stockline">확정 후 창고: ' + esc(bits) + "</p>";
   }
 
   function resultHtml(core, scenario, entry, settled) {
@@ -434,17 +435,18 @@
     const tone = response === "success" ? "is-success" : response === "partial" ? "is-partial" : "is-failure";
     const supply = components.supplyFulfillment == null ? "" : Math.round(components.supplyFulfillment * 100) + "%";
     const efficiency = components.budgetEfficiency == null ? "" : Math.round(components.budgetEfficiency * 100) + "%";
+    const quantityLabel = scenario.objective === "stock" ? "창고 비축량" : "현장 투입량";
     const hint = response === "success"
       ? "위험 조정 비용이 당시 실행 가능한 최선보다 10% 이내예요."
       : response === "partial"
         ? "최선보다 비용이 높지만 35% 이내예요."
         : scenario.failHint;
     return '<section class="mat-result ' + tone + '"><h2>오늘 결과 · ' + esc(RESPONSE[response] || "반영됨") + '</h2>'
-      + '<div class="mat-result-grid"><div><span>확보</span><b>' + (settled ? settled.available : entry.economicDecision.availableQuantity) + " / " + scenario.requiredQuantity + '</b></div>'
+      + '<div class="mat-result-grid"><div><span>' + quantityLabel + '</span><b>' + (settled ? settled.available : entry.economicDecision.availableQuantity) + " / " + scenario.requiredQuantity + '</b></div>'
       + '<div><span>예산 변화</span><b>' + signed(core, entry.budgetDelta) + '억</b></div>'
       + '<div><span>수요 충족</span><b>' + esc(supply || "-") + '</b></div>'
       + '<div><span>예산 효율</span><b>' + esc(efficiency || "-") + '</b></div></div>'
-      + "<p>" + esc(hint) + " 선택 비용 " + money(core, entry.economicDecision.chosenExpectedCost) + "억, 당시 최선 " + money(core, entry.economicDecision.bestFeasibleExpectedCost) + "억이에요. 뉴스에는 필요량 " + scenario.requiredQuantity + "과 확보량을 전달했어요.</p></section>";
+      + "<p>" + esc(hint) + " 선택 비용 " + money(core, entry.economicDecision.chosenExpectedCost) + "억, 당시 최선 " + money(core, entry.economicDecision.bestFeasibleExpectedCost) + "억이에요. 뉴스에는 목표 " + scenario.requiredQuantity + "묶음과 " + quantityLabel + "을 전달했어요.</p></section>";
   }
 
   function peek(storage, key) {
